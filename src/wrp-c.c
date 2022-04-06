@@ -596,12 +596,12 @@ static ssize_t __wrp_struct_to_bytes( const wrp_msg_t *msg, char **bytes )
 		        encode->headers = event->headers;
 		        encode->metadata = event->metadata;
 		        encode->partner_ids = event->partner_ids;
-			if( event->qos ) {
+			//if( event->qos ) {
 				encode->qos = event->qos;
-			}	
-			if( event->transaction_uuid ) {
+			//}	
+			//if( event->transaction_uuid ) {
 				encode->transaction_uuid = event->transaction_uuid;
-			}	
+			//}	
 			encode->msgType = msg->msg_type;
 		        rv = __wrp_pack_structure( encode, bytes );
 		        break;
@@ -1187,13 +1187,13 @@ static ssize_t __wrp_pack_structure( struct req_res_t *encodeReq , char **data )
             msgpack_pack_map( &pk, wrp_map_size );
             //Pack msgType,source,dest,headers,metadata,partner_ids
             mapCommonString( &pk, encodeReqtmp );
-	    if( encodeReqtmp->qos ) {
+	    //if( encodeReqtmp->qos ) {
 	    	__msgpack_pack_string( &pk, WRP_QOS.name, WRP_QOS.length );
 	    	msgpack_pack_int( &pk, encodeReqtmp->qos );  
-	    }
-	    if( encodeReqtmp->transaction_uuid ) {
+	    //}
+	    //if( encodeReqtmp->transaction_uuid ) {
 	    	__msgpack_pack_string_nvp( &pk, &WRP_TRANS_ID, encodeReqtmp->transaction_uuid );
-	    }	
+	    //}	
             __msgpack_pack_string_nvp( &pk, &WRP_CONTENT_TYPE, encodeReqtmp->content_type );
             __msgpack_pack_string( &pk, WRP_PAYLOAD.name, WRP_PAYLOAD.length );
             msgpack_pack_bin( &pk, encodeReqtmp->payload_size );
@@ -1925,12 +1925,12 @@ static ssize_t __wrp_bytes_to_struct( const void *bytes, const size_t length,
                         msg->u.event.payload_size = decodeReq->payload_size;
                         msg->u.event.headers = decodeReq->headers;
                         msg->u.event.partner_ids = decodeReq->partner_ids;
-			if( decodeReq->qos ) {
+			//if( decodeReq->qos ) {
 				msg->u.event.qos = decodeReq->qos;
-			}	
-			if( decodeReq->transaction_uuid ) {
+			//}	
+			//if( decodeReq->transaction_uuid ) {
 				msg->u.event.transaction_uuid = decodeReq->transaction_uuid;
-		        }		
+		        //}		
                         *msg_ptr = msg;
                         free( decodeReq );
                         return length;
