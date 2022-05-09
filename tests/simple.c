@@ -99,6 +99,7 @@ const struct test_vectors test[] = {
         .in.u.req.include_spans = false,
         .in.u.req.spans.spans = NULL,
         .in.u.req.spans.count = 0,
+	.in.u.req.qos = 99,
         .in.u.req.payload = "123",
         .in.u.req.payload_size = 3,
 
@@ -114,12 +115,13 @@ const struct test_vectors test[] = {
         "    .accept           = (null)\n"
         "    .include_spans    = false\n"
         "    .spans            = ''\n"
+	"    .qos              = 99\n"
         "    .payload_size     = 3\n"
         "}\n",
 
-        .msgpack_size = 149,
+        .msgpack_size = 154,
         .msgpack = {
-            0x86,  /* 6 name value pairs */
+            0x87,  /* 7 name value pairs */
 
             /* msg_type -> 3 */
             0xa8,  /* "msg_type" */
@@ -153,6 +155,11 @@ const struct test_vectors test[] = {
             'c', 'o', 'n', 't', 'e', 'n', 't', '_', 't', 'y', 'p', 'e',
             0xb0,   /* application/json */
             'a', 'p', 'p', 'l', 'i', 'c', 'a', 't', 'i', 'o', 'n', '/', 'j', 's', 'o', 'n',
+
+	    /* qos -> 99 */
+            0xa3,  /* qos */
+            'q', 'o', 's',
+            0x5a,  /* 99 */
 
             /* payload -> data */
             0xa7,   /* payload */
@@ -188,7 +195,7 @@ const struct test_vectors test[] = {
         "    .content_type     = application/json\n"
         "    .accept           = (null)\n"
         "    .include_spans    = true\n"
-        "    .spans            = ''\n"
+        "    .spans            = ''\n" 
         "    .payload_size     = 3\n"
         "}\n",
 
@@ -637,6 +644,7 @@ const struct test_vectors test[] = {
         .in.u.event.partner_ids = &partner_ids,
         .in.u.event.headers = &headers,
         .in.u.event.qos = 75,
+	.in.u.event.rdr = 45,
         .in.u.event.payload = "123",
         .in.u.event.payload_size = 3,
 
@@ -649,13 +657,14 @@ const struct test_vectors test[] = {
         "    .headers          = 'Header 1, Header 2'\n"
         "    .qos              = 75\n"
         "    .transaction_uuid = (null)\n"
+	"    .rdr              = 45\n" 
         "    .content_type     = application/json\n"
         "    .payload_size     = 3\n"
         "}\n",
 
-        .msgpack_size = 159,
+        .msgpack_size = 163,
         .msgpack = {
-            0x88,  /* 8 name value pairs */
+            0x89,  /* 9 name value pairs */
 
             /* msg_type -> 4 */
             0xa8,  /* "msg_type" */
@@ -694,6 +703,11 @@ const struct test_vectors test[] = {
             0xa3,  /* qos */
             'q', 'o', 's',
             0x4b,  /* 75 */
+
+	    /* rdr -> 45 */
+            0xa3,  /* rdr */
+            'r', 'd', 'r',
+            0x2d,  /* 45 */
 
             /* content_type -> application/json */
             0xac,   /* content_type */
@@ -742,6 +756,7 @@ const wrp_msg_t crud_test[] = {
         .u.crud.include_spans = true,
         .u.crud.spans.spans = NULL,
         .u.crud.spans.count = 0,
+	.u.crud.qos = 10,
         .u.crud.payload = "123",
         .u.crud.payload_size = 3
     },
@@ -755,6 +770,7 @@ const wrp_msg_t crud_test[] = {
         .u.crud.include_spans = true,
         .u.crud.spans.spans = NULL,
         .u.crud.spans.count = 0,
+	.u.crud.qos = 20,
         .u.crud.payload = "123",
         .u.crud.payload_size = 3
     },
@@ -768,6 +784,7 @@ const wrp_msg_t crud_test[] = {
         .u.crud.include_spans = true,
         .u.crud.spans.spans = NULL,
         .u.crud.spans.count = 0,
+	.u.crud.qos = 30,
         .u.crud.payload = "123",
         .u.crud.payload_size = 3
     },
@@ -781,6 +798,7 @@ const wrp_msg_t crud_test[] = {
         .u.crud.include_spans = true,
         .u.crud.spans.spans = NULL,
         .u.crud.spans.count = 0,
+	.u.crud.qos =40,
         .u.crud.payload = "123",
         .u.crud.payload_size = 3
     }
@@ -1079,6 +1097,20 @@ void test_encode_decode()
                             .u.req.payload = "123",
                             .u.req.payload_size = 3
                           };
+    const wrp_msg_t msg1 = { .msg_type = WRP_MSG_TYPE__REQ,
+                            .u.req.transaction_uuid = "c07ee5e1-70be-444c-a156-097c767ad8aa",
+                            .u.req.content_type = "application/json",
+                            .u.req.source = "source-address",
+                            .u.req.dest = "dest-address",
+                            .u.req.partner_ids = &partner_ids,
+                            .u.req.headers = &headers,
+                            .u.req.include_spans = false,
+                            .u.req.spans.spans = NULL,
+                            .u.req.spans.count = 0,
+			    .u.req.qos = 55,
+                            .u.req.payload = "123",
+                            .u.req.payload_size = 3
+                          };    
     const wrp_msg_t event_m = { .msg_type = WRP_MSG_TYPE__EVENT,
                                 .u.event.source = "source-address",
                                 .u.event.dest = "dest-address",
@@ -1087,6 +1119,7 @@ void test_encode_decode()
                                 .u.event.headers = &headers,
 				.u.event.qos = 77,
 				.u.event.transaction_uuid = "c07ee5e1-70be-444c-a156-097c767ad8ad",
+				.u.event.rdr = 66,
                                 .u.event.payload = "0123456789",
                                 .u.event.payload_size = 10
                               };
@@ -1211,6 +1244,86 @@ void test_encode_decode()
     WRP_DEBUG("decoded content_type:%s\n", message->u.req.content_type );
     WRP_DEBUG("decoded payload:%s\n", ( char* )message->u.req.payload );
     wrp_free_struct( message );
+
+    // msgpack encode
+    size = wrp_struct_to( &msg1, WRP_BYTES, &bytes );
+    /* print the encoded message */
+    _internal_tva_xxd( bytes, size, 0 );
+    // msgpck decode
+    rv = wrp_to_struct( bytes, size, WRP_BYTES, &message );
+    free( bytes );
+    CU_ASSERT_EQUAL( rv, size );    	    
+    CU_ASSERT_EQUAL( message->msg_type, msg.msg_type );
+    CU_ASSERT_STRING_EQUAL( message->u.req.source, msg.u.req.source );
+    CU_ASSERT_STRING_EQUAL( message->u.req.dest, msg.u.req.dest );
+    CU_ASSERT_STRING_EQUAL( message->u.req.content_type, msg.u.req.content_type );
+    CU_ASSERT_STRING_EQUAL( message->u.req.transaction_uuid, msg.u.req.transaction_uuid );
+    CU_ASSERT_STRING_EQUAL( message->u.req.qos, msg.u.req.qos );
+    CU_ASSERT_STRING_EQUAL( message->u.req.payload, msg.u.req.payload );
+
+    if( NULL != msg.u.req.headers ) {
+        size_t n = 0;
+        WRP_DEBUG("headers count returned is %d\n", ( int ) message->u.req.headers->count );
+
+        if( NULL != msg.u.req.headers ) {
+            while( n < msg.u.req.headers->count ) {
+                CU_ASSERT_STRING_EQUAL( msg.u.req.headers->headers[n],
+                                        message->u.req.headers->headers[n] );
+                n++;
+            }
+        } else {
+            CU_ASSERT( false );
+        }
+    }
+    
+    if( NULL != msg.u.req.partner_ids ) {
+        size_t i = 0;
+        WRP_DEBUG("partner_ids count returned is %d\n", ( int ) message->u.req.partner_ids->count );
+
+        if( NULL != msg.u.req.partner_ids ) {
+            while( i < msg.u.req.partner_ids->count ) {
+                CU_ASSERT_STRING_EQUAL( msg.u.req.partner_ids->partner_ids[i],
+                                        message->u.req.partner_ids->partner_ids[i] );
+                i++;
+            }
+        } else {
+            CU_ASSERT( false );
+        }
+    }
+
+    WRP_DEBUG("decoded msgType:%d\n", message->msg_type );
+    WRP_DEBUG("decoded source:%s\n", message->u.req.source );
+    WRP_DEBUG("decoded dest:%s\n", message->u.req.dest );
+    WRP_DEBUG("decoded content_type:%s\n", message->u.req.content_type );
+    WRP_DEBUG("decoded transaction_uuid:%s\n", message->u.req.transaction_uuid );
+    WRP_DEBUG("decoded qos:%d\n", message->u.req.qos );
+    WRP_DEBUG("decoded payload:%s\n", ( char* )message->u.req.payload );
+    wrp_free_struct( message );
+    WRP_DEBUG("Encode-Decode for BASE64\n" );
+    // msgpack encode
+    base64_size = wrp_struct_to( &msg1, WRP_BASE64, &bytes );
+    /* print the encoded message */
+    _internal_tva_xxd( bytes, base64_size, 0 );
+    // msgpck decode
+    rv = wrp_to_struct( bytes, base64_size, WRP_BASE64, &message );
+    free( bytes );
+    CU_ASSERT_EQUAL( rv, size );
+    CU_ASSERT_EQUAL( message->msg_type, msg.msg_type );
+    CU_ASSERT_STRING_EQUAL( message->u.req.source, msg.u.req.source );
+    CU_ASSERT_STRING_EQUAL( message->u.req.dest, msg.u.req.dest );
+    CU_ASSERT_STRING_EQUAL( message->u.req.content_type, msg.u.req.content_type );
+    CU_ASSERT_STRING_EQUAL( message->u.req.transaction_uuid, msg.u.req.transaction_uuid );
+    CU_ASSERT_STRING_EQUAL( message->u.req.qos, msg.u.req.qos );
+    CU_ASSERT_STRING_EQUAL( message->u.req.payload, msg.u.req.payload );
+    WRP_DEBUG("decoded msgType:%d\n", message->msg_type );
+    WRP_DEBUG("decoded source:%s\n", message->u.req.source );
+    WRP_DEBUG("decoded dest:%s\n", message->u.req.dest );
+    WRP_DEBUG("decoded transaction_uuid:%s\n", message->u.req.transaction_uuid );
+    WRP_DEBUG("decoded content_type:%s\n", message->u.req.content_type );
+    WRP_DEBUG("decoded qos:%s\n", message->u.req.qos );
+    WRP_DEBUG("decoded payload:%s\n", ( char* )message->u.req.payload );
+    wrp_free_struct( message );
+
     // msgpack encode
     const wrp_msg_t *event_msg = &test[5].in;
     size = wrp_struct_to( event_msg, WRP_BYTES, &bytes );
@@ -1384,7 +1497,8 @@ void test_encode_decode()
 	CU_ASSERT_STRING_EQUAL( message->u.event.transaction_uuid, event_msg->u.event.transaction_uuid );
 	WRP_INFO("encoded qos:%d decoded qos:%d\n", message->u.event.qos, event_msg->u.event.qos );
 	WRP_INFO("encoded transaction_uuid:%s decoded transaction_uuid:%s\n", message->u.event.transaction_uuid, event_msg->u.event.transaction_uuid );
-	  
+	 WRP_INFO("encoded rdr:%d decoded rdr:%d\n", message->u.event.rdr, event_msg->u.event.rdr );  
+
         if( NULL != event_msg->u.event.headers ) {
             size_t n = 0;
 
@@ -1626,6 +1740,7 @@ void test_crud_message()
         .u.crud.spans.count = 0,
         .u.crud.status = 1,
         .u.crud.rdr = 0,
+	.u.crud.qos = 11,
         .u.crud.path = "/Harvester",
         .u.crud.payload = createPayload,
         .u.crud.payload_size = sizeof(createPayload)
@@ -1643,6 +1758,7 @@ void test_crud_message()
         .u.crud.spans.count = sizeof( crud_spans ) / sizeof( struct money_trace_span ),
         .u.crud.status = 1,
         .u.crud.rdr = 0,
+	.u.crud.qos = 22,
         .u.crud.path = "/IOT",
         .u.crud.payload = NULL,
         .u.crud.payload_size = 0
@@ -1660,6 +1776,7 @@ void test_crud_message()
         .u.crud.spans.count = sizeof( spans ) / sizeof( struct money_trace_span ),
         .u.crud.status = 0,
         .u.crud.rdr = 0,
+	.u.crud.qos = 33,
         .u.crud.path = "/Harvester",
         .u.crud.payload = updatePayload,
         .u.crud.payload_size = sizeof(updatePayload)
@@ -1677,6 +1794,7 @@ void test_crud_message()
         .u.crud.spans.count = 0,
         .u.crud.status = 1,
         .u.crud.rdr = 0,
+	.u.crud.qos = 44,
         .u.crud.path = "/IOT",
         .u.crud.payload = NULL,
         .u.crud.payload_size = 0
@@ -1711,6 +1829,7 @@ void test_crud_message()
     CU_ASSERT_EQUAL( message->msg_type, create.msg_type );
     CU_ASSERT_EQUAL( message->u.crud.status, create.u.crud.status );
     CU_ASSERT_EQUAL( message->u.crud.rdr, create.u.crud.rdr );
+    CU_ASSERT_EQUAL( message->u.crud.qos, create.u.crud.qos );
     CU_ASSERT_STRING_EQUAL( message->u.crud.source, create.u.crud.source );
     CU_ASSERT_STRING_EQUAL( message->u.crud.dest, create.u.crud.dest );
     CU_ASSERT_STRING_EQUAL( message->u.crud.transaction_uuid, create.u.crud.transaction_uuid );
@@ -1768,6 +1887,7 @@ void test_crud_message()
     WRP_DEBUG("decoded dest:%s\n", message->u.crud.dest );
     WRP_DEBUG("decoded transaction_uuid:%s\n", message->u.crud.transaction_uuid );
     WRP_DEBUG("decoded path %s\n", message->u.crud.path );
+    WRP_INFO("CURE CREATE - encoded qos %s  decoded qos %s\n", create.u.crud.qos, message->u.crud.qos );
     wrp_free_struct( message );
     WRP_DEBUG("      **************** CRUD retreive*****************     \n" );
     // msgpack encode for CRUD
@@ -1781,6 +1901,7 @@ void test_crud_message()
     CU_ASSERT_EQUAL( message->msg_type, retreive.msg_type );
     CU_ASSERT_EQUAL( message->u.crud.status, retreive.u.crud.status );
     CU_ASSERT_EQUAL( message->u.crud.rdr, retreive.u.crud.rdr );
+    CU_ASSERT_EQUAL( message->u.crud.qos, retreive.u.crud.qos );
     CU_ASSERT_STRING_EQUAL( message->u.crud.source, retreive.u.crud.source );
     CU_ASSERT_STRING_EQUAL( message->u.crud.dest, retreive.u.crud.dest );
     CU_ASSERT_STRING_EQUAL( message->u.crud.transaction_uuid, retreive.u.crud.transaction_uuid );
@@ -1840,6 +1961,7 @@ void test_crud_message()
     WRP_DEBUG("decoded dest:%s\n", message->u.crud.dest );
     WRP_DEBUG("decoded transaction_uuid:%s\n", message->u.crud.transaction_uuid );
     WRP_DEBUG("decoded path:%s\n", message->u.crud.path );
+    WRP_INFO("CURD RETRIVE - encoded qos: %s decoded qos: %s\n", retreive.u.crud.qos, message->u.crud.qos ); 
     wrp_free_struct( message );
     WRP_DEBUG("     **************** CRUD Update*****************     \n" );
     // msgpack encode for CRUD
@@ -1853,6 +1975,7 @@ void test_crud_message()
     CU_ASSERT_EQUAL( message->msg_type, update.msg_type );
     CU_ASSERT_EQUAL( message->u.crud.status, update.u.crud.status );
     CU_ASSERT_EQUAL( message->u.crud.rdr, update.u.crud.rdr );
+    CU_ASSERT_EQUAL( message->u.crud.qos, update.u.crud.qos );
     CU_ASSERT_STRING_EQUAL( message->u.crud.source, update.u.crud.source );
     CU_ASSERT_STRING_EQUAL( message->u.crud.dest, update.u.crud.dest );
     CU_ASSERT_STRING_EQUAL( message->u.crud.transaction_uuid, update.u.crud.transaction_uuid );
@@ -1904,6 +2027,7 @@ void test_crud_message()
     WRP_DEBUG("decoded dest:%s\n", message->u.crud.dest );
     WRP_DEBUG("decoded transaction_uuid:%s\n", message->u.crud.transaction_uuid );
     WRP_DEBUG("decoded path:%s\n", message->u.crud.path );
+    WRP_INFO("CURD UPDATE - encoded qos: %s decoded qos: %s\n", update.u.crud.qos, u.crud.qos);
     wrp_free_struct( message );
     WRP_DEBUG("     **************** CRUD Delete*****************     \n" );
     // msgpack encode for CRUD
@@ -1917,6 +2041,7 @@ void test_crud_message()
     CU_ASSERT_EQUAL( message->msg_type, delete.msg_type );
     CU_ASSERT_EQUAL( message->u.crud.status, delete.u.crud.status );
     CU_ASSERT_EQUAL( message->u.crud.rdr, delete.u.crud.rdr );
+    CU_ASSERT_EQUAL( message->u.crud.qos, delete.u.crud.qos );
     CU_ASSERT_STRING_EQUAL( message->u.crud.source, delete.u.crud.source );
     CU_ASSERT_STRING_EQUAL( message->u.crud.dest, delete.u.crud.dest );
     CU_ASSERT_STRING_EQUAL( message->u.crud.transaction_uuid, delete.u.crud.transaction_uuid );
@@ -1970,6 +2095,7 @@ void test_crud_message()
     WRP_DEBUG("decoded dest:%s\n", message->u.crud.dest );
     WRP_DEBUG("decoded transaction_uuid:%s\n", message->u.crud.transaction_uuid );
     WRP_DEBUG("decoded path:%s\n", message->u.crud.path );
+    WRP_INFO("CURD DELETE - encoded qos: %s decoded qos: %s\n", delete.u.crud.qos, message->u.crud.qos );
     wrp_free_struct( message );
     WRP_DEBUG("     **************** Metadata *****************     \n" );
     // msgpack encode for METADATA

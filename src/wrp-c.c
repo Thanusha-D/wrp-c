@@ -582,6 +582,9 @@ static ssize_t __wrp_struct_to_bytes( const wrp_msg_t *msg, char **bytes )
 		        encode->headers = req->headers;
 		        encode->metadata = req->metadata;
 		        encode->partner_ids = req->partner_ids;
+			if( event->qos ) {
+                                encode->qos = event->qos;
+                        }
 		        encode->msgType = msg->msg_type;
 		        rv = __wrp_pack_structure( encode, bytes );
 		        break;
@@ -605,7 +608,10 @@ static ssize_t __wrp_struct_to_bytes( const wrp_msg_t *msg, char **bytes )
 			else
 			{
 				encode->transaction_uuid = NULL;
-			}	
+			}
+			if( event->rdr ) {
+                                encode->rdr = event->rdr;
+                        }
 			encode->msgType = msg->msg_type;
 		        rv = __wrp_pack_structure( encode, bytes );
 		        break;
@@ -638,6 +644,9 @@ static ssize_t __wrp_struct_to_bytes( const wrp_msg_t *msg, char **bytes )
 		        encode->path = crud->path;
 		        encode->status = crud->status;
 		        encode->rdr = crud->rdr;
+			if( event->qos ) {
+                                encode->qos = event->qos;
+                        }
 		        rv = __wrp_pack_structure( encode, bytes );
 		        break;
 		    case WRP_MSG_TYPE__SVC_ALIVE:
@@ -801,6 +810,7 @@ static ssize_t __wrp_req_struct_to_string( const struct wrp_req_msg *req, char *
                           "    .accept           = %s\n"
                           "    .include_spans    = %s\n"
                           "    .spans            = %s\n"
+			  "    .qos              = %s\n" 
                           "    .payload_size     = %zd\n"
                           "}\n";
     size_t length;
@@ -814,7 +824,7 @@ static ssize_t __wrp_req_struct_to_string( const struct wrp_req_msg *req, char *
     length = snprintf( NULL, 0, req_fmt, req->transaction_uuid, req->source,
                        req->dest, partner_ids, headers, req->content_type,
                        req->accept, ( req->include_spans ? "true" : "false" ),
-                       spans, req->payload_size );
+                       spans, req->qos, req->payload_size );
 
     if( NULL != bytes ) {
         char *data;
@@ -824,7 +834,7 @@ static ssize_t __wrp_req_struct_to_string( const struct wrp_req_msg *req, char *
             sprintf( data, req_fmt, req->transaction_uuid, req->source,
                      req->dest, partner_ids, headers, req->content_type,
                      req->accept, ( req->include_spans ? "true" : "false" ),
-                     spans, req->payload_size );
+                     spans, req->qos, req->payload_size );
             data[length] = '\0';
             *bytes = data;
         } else {
@@ -865,6 +875,7 @@ static ssize_t __wrp_event_struct_to_string( const struct wrp_event_msg *event,
                             "    .headers          = %s\n"
 			    "    .qos              = %d\n" 
 			    "    .transaction_uuid = %s\n"
+			    "    .rdr              = %d\n" 
                             "    .content_type     = %s\n"
                             "    .payload_size     = %zd\n"
                             "}\n";
@@ -875,14 +886,14 @@ static ssize_t __wrp_event_struct_to_string( const struct wrp_event_msg *event,
     headers = __get_header_string( event->headers );
     partner_ids = __get_partner_ids_string( event->partner_ids );
     
-    length = snprintf( NULL, 0, event_fmt, event->source, event->dest, partner_ids, headers, event->qos, event->transaction_uuid, event->content_type, event->payload_size );
+    length = snprintf( NULL, 0, event_fmt, event->source, event->dest, partner_ids, headers, event->qos, event->transaction_uuid, event->rdr, event->content_type, event->payload_size );
 
     if( NULL != bytes ) {
         char *data;
         data = ( char* ) malloc( sizeof( char ) * ( length + 1 ) );   /* +1 for '\0' */
 
         if( NULL != data ) {
-            sprintf( data, event_fmt, event->source, event->dest, partner_ids, headers, event->qos, event->transaction_uuid, event->content_type, event->payload_size );
+            sprintf( data, event_fmt, event->source, event->dest, partner_ids, headers, event->qos, event->transaction_uuid, event->rdr, event->content_type, event->payload_size );
             data[length] = '\0';
             *bytes = data;
         } else {
@@ -1183,11 +1194,18 @@ static ssize_t __wrp_pack_structure( struct req_res_t *encodeReq , char **data )
             }
 
             __msgpack_spans( &pk, &encodeReqtmp->spans );
+	    if( encodeReqtmp->qos ) {
+                __msgpack_pack_string( &pk, WRP_QOS.name, WRP_QOS.length );
+                msgpack_pack_int( &pk, encodeReqtmp->qos );
+            }
             __msgpack_pack_string( &pk, WRP_PAYLOAD.name, WRP_PAYLOAD.length );
             msgpack_pack_bin( &pk, encodeReqtmp->payload_size );
             msgpack_pack_bin_body( &pk, encodeReqtmp->payload, encodeReqtmp->payload_size );
             break;
         case WRP_MSG_TYPE__EVENT:
+	    if( encodeReqtmp->rdr ) {
+                  wrp_map_size++;
+            }
             msgpack_pack_map( &pk, wrp_map_size );
             //Pack msgType,source,dest,headers,metadata,partner_ids
             mapCommonString( &pk, encodeReqtmp );
@@ -1198,6 +1216,10 @@ static ssize_t __wrp_pack_structure( struct req_res_t *encodeReq , char **data )
 	    if( encodeReqtmp->transaction_uuid != NULL) {
 	    	__msgpack_pack_string_nvp( &pk, &WRP_TRANS_ID, encodeReqtmp->transaction_uuid );
 	    }
+	    if( encodeReqtmp->rdr ) {
+                __msgpack_pack_string( &pk, WRP_RDR.name, WRP_RDR.length );
+                msgpack_pack_int( &pk, encodeReqtmp->rdr );
+            }
             __msgpack_pack_string_nvp( &pk, &WRP_CONTENT_TYPE, encodeReqtmp->content_type );
             __msgpack_pack_string( &pk, WRP_PAYLOAD.name, WRP_PAYLOAD.length );
             msgpack_pack_bin( &pk, encodeReqtmp->payload_size );
@@ -1259,6 +1281,11 @@ static ssize_t __wrp_pack_structure( struct req_res_t *encodeReq , char **data )
             if( encodeReqtmp->rdr >= 0 ) {
                 __msgpack_pack_string( &pk, WRP_RDR.name, WRP_RDR.length );
                 msgpack_pack_int( &pk, encodeReqtmp->rdr );
+            }
+
+	    if( encodeReqtmp->qos ) {
+                __msgpack_pack_string( &pk, WRP_QOS.name, WRP_QOS.length );
+                msgpack_pack_int( &pk, encodeReqtmp->qos );
             }
 
             if( encodeReqtmp->path != NULL ) {
@@ -1913,6 +1940,9 @@ static ssize_t __wrp_bytes_to_struct( const void *bytes, const size_t length,
                         msg->u.req.include_spans = decodeReq->include_spans;
                         msg->u.req.spans.spans = NULL;   /* not supported */
                         msg->u.req.spans.count = 0;     /* not supported */
+			if( decodeReq->qos ) {
+                                msg->u.event.qos = decodeReq->qos;
+                        }
                         msg->u.req.payload = decodeReq->payload;
                         msg->u.req.payload_size = decodeReq->payload_size;
                         msg->u.req.partner_ids = decodeReq->partner_ids;
@@ -1934,7 +1964,10 @@ static ssize_t __wrp_bytes_to_struct( const void *bytes, const size_t length,
 			}	
 			if( decodeReq->transaction_uuid ) {
 				msg->u.event.transaction_uuid = decodeReq->transaction_uuid;
-		        }		
+		        }	
+			if( decodeReq->rdr ) {
+                                msg->u.event.rdr = decodeReq->rdr;
+                        }
                         *msg_ptr = msg;
                         free( decodeReq );
                         return length;
@@ -1971,6 +2004,9 @@ static ssize_t __wrp_bytes_to_struct( const void *bytes, const size_t length,
                         msg->u.crud.spans.count = 0;     /* not supported */
                         msg->u.crud.status = decodeReq->statusValue;
                         msg->u.crud.rdr = decodeReq->rdr;
+			if( decodeReq->qos ) {
+                                msg->u.event.qos = decodeReq->qos;
+                        }
                         msg->u.crud.payload = decodeReq->payload;
                         msg->u.crud.payload_size = decodeReq->payload_size;
                         msg->u.crud.path = decodeReq->path;

@@ -107,6 +107,7 @@ struct wrp_req_msg {
     headers_t *headers;                         /* NULL terminated list */
     data_t *metadata;
     bool include_spans;
+    int qos;
     struct money_trace_spans spans;
     void *payload;
     size_t payload_size;
@@ -119,6 +120,7 @@ struct wrp_event_msg {
     partners_t *partner_ids;
     int qos;
     char *transaction_uuid;
+    int rdr;
     headers_t *headers;                         /* NULL terminated list */
     data_t *metadata;
     void *payload;
@@ -138,6 +140,7 @@ struct wrp_crud_msg {
     struct money_trace_spans spans;
     int status;
     int rdr;
+    int qos;
     char *path;
     void *payload;
     size_t payload_size;
