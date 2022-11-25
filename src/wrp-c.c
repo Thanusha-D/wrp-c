@@ -239,12 +239,16 @@ void wrp_free_struct( wrp_msg_t *msg )
             }
             if( NULL != msg->u.req.headers ) {
                 size_t cnt;
+                WRP_INFO("Struct has header field\n");
 
                 for( cnt = 0; cnt < msg->u.req.headers->count; cnt++ ) {
+		    WRP_INFO("Before free of headers->headers[%d]\n", cnt);	
                     free( msg->u.req.headers->headers[cnt] );
+		    WRP_INFO("After free of headers->headers[%d]\n", cnt);
                 }
-
+                WRP_INFO("Before free of u.req.headers\n");
                 free( msg->u.req.headers );
+		WRP_INFO("After free of u.req.headers\n");
             }
             if( NULL != msg->u.req.metadata ) {
                 size_t n = 0;
