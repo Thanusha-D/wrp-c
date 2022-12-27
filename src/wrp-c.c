@@ -238,13 +238,19 @@ void wrp_free_struct( wrp_msg_t *msg )
                 free(msg->u.req.accept);
             }
             if( NULL != msg->u.req.headers ) {
+		WRP_INFO("msg having headers\n");    
                 size_t cnt;
 
                 for( cnt = 0; cnt < msg->u.req.headers->count; cnt++ ) {
+		    WRP_INFO("before free msg->u.req.headers->headers[%d] - %s\n", cnt, msg->u.req.headers->headers[cnt]);
                     free( msg->u.req.headers->headers[cnt] );
-                }
+		    WRP_INFO("after free msg->u.req.headers->headers[%d] - %s\n", cnt, msg->u.req.headers->headers[cnt]);
 
+                }
+	
+                WRP_INFO("before free msg->u.req.headers\n"); 
                 free( msg->u.req.headers );
+		WRP_INFO("after free msg->u.req.headers\n");
             }
             if( NULL != msg->u.req.metadata ) {
                 size_t n = 0;
